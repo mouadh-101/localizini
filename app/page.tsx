@@ -163,7 +163,7 @@ export default function HomePage() {
 
   if (showProfile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-teal-50 via-teal-100 to-teal-200">
+      <div className="min-h-screen bg-brand-background">
         <Navigation
           user={user}
           onAuthClick={() => setShowAuth(true)}
@@ -176,25 +176,8 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-teal-100 to-teal-200 relative overflow-hidden">
-      {/* Floating background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          className="absolute top-20 left-10 w-20 h-20 bg-gradient-to-r from-teal-300 to-teal-400 rounded-full opacity-30"
-          animate={{ y: [0, -20, 0], rotate: [0, 180, 360] }}
-          transition={{ duration: 8, repeat: Number.POSITIVE_INFINITY }}
-        />
-        <motion.div
-          className="absolute top-40 right-20 w-16 h-16 bg-gradient-to-r from-teal-200 to-teal-300 rounded-full opacity-25"
-          animate={{ y: [0, 20, 0], rotate: [0, -180, -360] }}
-          transition={{ duration: 6, repeat: Number.POSITIVE_INFINITY }}
-        />
-        <motion.div
-          className="absolute bottom-40 left-1/3 w-12 h-12 bg-gradient-to-r from-teal-400 to-teal-500 rounded-full opacity-20"
-          animate={{ y: [0, -15, 0], x: [0, 10, 0] }}
-          transition={{ duration: 7, repeat: Number.POSITIVE_INFINITY }}
-        />
-      </div>
+    <div className="min-h-screen bg-brand-background relative overflow-hidden">
+      {/* Floating background elements removed */}
 
       <Navigation
         user={user}
@@ -223,11 +206,11 @@ export default function HomePage() {
                 animate={{ x: 0 }}
                 exit={{ x: -320 }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="absolute inset-y-0 left-0 w-80 bg-white/95 backdrop-blur-xl"
+                className="absolute inset-y-0 left-0 w-80 bg-brand-background/95 backdrop-blur-xl"
               >
-                <div className="flex items-center justify-between p-4 border-b border-teal-200">
-                  <h2 className="text-lg font-semibold text-[#032539] flex items-center">
-                    <Sparkles className="h-5 w-5 mr-2 text-teal-500" />
+              <div className="flex items-center justify-between p-4 border-b border-brand-accent-medium">
+                <h2 className="text-lg font-semibold text-brand-text flex items-center">
+                  <Sparkles className="h-5 w-5 mr-2 text-brand-secondary" />
                     Discovery Filters
                   </h2>
                   <Button variant="ghost" size="icon" onClick={() => setShowFilters(false)}>
@@ -253,10 +236,10 @@ export default function HomePage() {
               className="lg:hidden absolute top-4 left-4"
             >
               <Button
-                className="bg-white/90 backdrop-blur-xl text-[#032539] hover:bg-white shadow-xl border border-teal-200"
+                className="bg-brand-background/90 backdrop-blur-xl text-brand-text hover:bg-brand-background shadow-soft-md border border-brand-accent-medium rounded-lg" // Added rounded-lg
                 onClick={() => setShowFilters(true)}
               >
-                <Filter className="h-4 w-4 mr-2" />
+                <Filter className="h-4 w-4 mr-2 text-brand-primary" />
                 Discover ✨
               </Button>
             </motion.div>
@@ -266,18 +249,18 @@ export default function HomePage() {
               <motion.div
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
-                className="absolute top-4 right-4 bg-gradient-to-r from-teal-500 to-teal-600 text-white px-4 py-2 rounded-full shadow-lg"
+                className="absolute top-4 right-4 bg-gradient-to-r from-brand-primary to-brand-accent-dark text-white px-4 py-2 rounded-full shadow-soft-lg"
               >
                 <div className="flex items-center space-x-2">
                   <Zap className="h-4 w-4" />
-                  <span className="font-bold">{discoveryStreak} day streak! 🌊</span>
+                  <span className="font-bold">{discoveryStreak} day streak! ✨</span>
                 </div>
               </motion.div>
             )}
           </div>
 
           {/* Place Cards - Desktop */}
-          <div className="hidden lg:block w-96 border-l border-teal-200">
+          <div className="hidden lg:block w-96 border-l border-brand-accent-medium">
             <PlaceCardList places={filteredPlaces} onPlaceSelect={handlePlaceSelect} selectedPlace={selectedPlace} />
           </div>
         </div>
@@ -303,14 +286,14 @@ export default function HomePage() {
             className="fixed inset-0 flex items-center justify-center pointer-events-none z-50"
           >
             <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 1, repeat: 2 }} className="text-6xl">
-              🌊
+              🎉
             </motion.div>
             <motion.div
               initial={{ y: 50 }}
               animate={{ y: 0 }}
-              className="absolute text-2xl font-bold text-teal-600 bg-white/90 backdrop-blur-xl px-6 py-3 rounded-full shadow-xl"
+              className="absolute text-2xl font-bold text-brand-primary bg-brand-background/90 backdrop-blur-xl px-6 py-3 rounded-full shadow-soft-xl"
             >
-              New Discovery! ✨
+              New Discovery! 🎉
             </motion.div>
           </motion.div>
         )}

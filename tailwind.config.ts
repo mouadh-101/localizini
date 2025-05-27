@@ -19,32 +19,41 @@ const config: Config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['var(--font-inter)', 'sans-serif'],
+      },
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "#1C768F", // Original teal from brief
+        border: "hsl(var(--border))", // Will update this in globals.css step
+        input: "hsl(var(--input))", // Will update this in globals.css step
+        ring: "hsl(var(--ring))", // Will update this in globals.css step
+        background: "hsl(var(--background))", // Will be brand-background
+        foreground: "hsl(var(--foreground))", // Will be brand-text
+        'brand-primary': "#004D40",
+        'brand-secondary': "#48D1CC",
+        'brand-background': "#E6FFFA",
+        'brand-text': "#032539",
+        'brand-accent-medium': "#26A69A",
+        'brand-accent-dark': "#00796B",
+        primary: { // Keeping for now, might remove if not used by components
+          DEFAULT: "#004D40", 
           foreground: "#FFFFFF",
         },
-        secondary: {
-          DEFAULT: "#FA991C", // Original orange from brief
-          foreground: "#FFFFFF",
+        secondary: { // Keeping for now, might remove if not used by components
+          DEFAULT: "#48D1CC", 
+          foreground: "#032539", // Ensure contrast with bright mint
         },
-        // New teal palette from the image
+        // New teal palette from the image - keeping for now, might be useful
         teal: {
-          50: "#E6F7F7", // Very light mint
-          100: "#B3EEEE", // Light mint
-          200: "#80E5E5", // Bright mint/turquoise
-          300: "#4DDCDC", // Medium teal
-          400: "#26A69A", // Medium-dark teal
-          500: "#1C768F", // Original primary (dark teal)
-          600: "#186B7A", // Darker teal
-          700: "#145A65", // Very dark teal
-          800: "#104950", // Forest green-teal
-          900: "#0C383B", // Darkest teal
+          50: "#E6F7F7",
+          100: "#B3EEEE",
+          200: "#80E5E5",
+          300: "#4DDCDC",
+          400: "#26A69A",
+          500: "#1C768F",
+          600: "#186B7A",
+          700: "#145A65",
+          800: "#104950",
+          900: "#0C383B",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
@@ -68,9 +77,15 @@ const config: Config = {
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        '2xl': '1rem',
+        lg: '0.75rem', // var(--radius) was 0.5rem, so this is larger
+        md: '0.5rem',  // This is the old var(--radius)
+        sm: '0.25rem',
+      },
+      boxShadow: {
+        'soft-sm': '0 2px 4px rgba(0,0,0,0.05)',
+        'soft-md': '0 4px 8px rgba(0,0,0,0.07)',
+        'soft-lg': '0 8px 16px rgba(0,0,0,0.07)',
       },
       keyframes: {
         "accordion-down": {

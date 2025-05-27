@@ -2,9 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
+/* Removed old body font-family, as Inter is applied in layout.tsx */
 
 @layer utilities {
   .text-balance {
@@ -14,81 +12,93 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* New brand colors as HSL variables */
+    --brand-primary: 165 100% 15%;
+    --brand-secondary: 177 55% 58%;
+    --brand-background: 168 100% 95%; /* Used for --background */
+    --brand-text: 203 90% 12%;      /* Used for --foreground */
+    --brand-accent-medium: 174 63% 40%; /* Used for --border and --input */
+    --brand-accent-dark: 174 100% 24%;  /* Used for --ring */
+
+    /* Core semantic variables mapped to brand colors */
+    --background: var(--brand-background);
+    --foreground: var(--brand-text);
+    
+    --primary: var(--brand-primary);
+    --primary-foreground: 168 100% 95%; /* Assuming light text on dark primary */
+    
+    --secondary: var(--brand-secondary);
+    --secondary-foreground: 203 90% 12%; /* Assuming dark text on light secondary */
+    
+    --border: var(--brand-accent-medium);
+    --input: var(--brand-accent-medium); /* Using accent-medium for input borders as well */
+    --ring: var(--brand-accent-dark);
+
+    /* Define other standard variables if needed by components, mapped to brand colors or sensible defaults */
+    --card: var(--brand-background); /* Card background same as main background */
+    --card-foreground: var(--brand-text); /* Card text same as main text */
+    
+    --popover: var(--brand-background);
+    --popover-foreground: var(--brand-text);
+    
+    --muted: 174 20% 80%; /* A lighter shade of teal/mint for muted */
+    --muted-foreground: 174 30% 30%; /* Darker muted text */
+    
+    --accent: var(--brand-accent-medium);
+    --accent-foreground: 168 100% 95%; /* Light text on medium accent */
+
+    --destructive: 0 70% 50%; /* A generic red for destructive actions */
+    --destructive-foreground: 0 0% 100%;
+
+    --radius: 0.5rem; /* Default radius, tailwind config has more specific ones */
   }
+
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Define dark theme variables based on the new palette if needed in future */
+    /* For now, keeping it simple and ensuring high contrast */
+    --brand-primary: 165 100% 25%; /* Slightly lighter primary for dark mode */
+    --brand-secondary: 177 55% 48%; /* Slightly darker secondary for dark mode */
+    --brand-background: 203 80% 8%;  /* Very dark navy/teal for background */
+    --brand-text: 168 100% 90%;     /* Very light mint/white for text */
+    --brand-accent-medium: 174 63% 50%;
+    --brand-accent-dark: 174 100% 34%;
+
+    --background: var(--brand-background);
+    --foreground: var(--brand-text);
+    
+    --primary: var(--brand-primary);
+    --primary-foreground: 168 100% 90%;
+    
+    --secondary: var(--brand-secondary);
+    --secondary-foreground: 203 80% 8%;
+    
+    --border: var(--brand-accent-medium);
+    --input: var(--brand-accent-medium);
+    --ring: var(--brand-accent-dark);
+
+    --card: 203 80% 10%; /* Slightly lighter than background for cards */
+    --card-foreground: var(--brand-text);
+    
+    --popover: 203 80% 10%;
+    --popover-foreground: var(--brand-text);
+    
+    --muted: 174 20% 30%; 
+    --muted-foreground: 174 30% 70%;
+    
+    --accent: var(--brand-accent-medium);
+    --accent-foreground: 203 80% 8%;
+
+    --destructive: 0 70% 60%;
+    --destructive-foreground: 0 0% 100%;
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border; /* Uses the --border HSL variable defined above */
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground; /* Uses the --background and --foreground HSL variables */
+    /* font-family is set in app/layout.tsx via Inter variable */
   }
 }
