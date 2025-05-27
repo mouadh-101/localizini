@@ -2,13 +2,13 @@
 
 import type React from "react"
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog" // Added DialogClose
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { useState } from "react"
-import { Mail, Lock, User, Chrome } from "lucide-react"
+import { Mail, Lock, User, Chrome, XIcon } from "lucide-react" // Added XIcon
 
 interface AuthModalProps {
   isOpen: boolean
@@ -49,43 +49,51 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-2xl text-center text-[#032539]">
+      <DialogContent className="max-w-md bg-brand-background rounded-2xl shadow-soft-lg border-none p-8">
+        <DialogClose className="absolute right-5 top-5 text-brand-text hover:text-brand-primary hover:bg-brand-accent-medium/20 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 focus:ring-offset-brand-background">
+          <XIcon className="h-5 w-5" />
+          <span className="sr-only">Close</span>
+        </DialogClose>
+        <DialogHeader className="mb-4"> {/* Added margin bottom to header for spacing */}
+          <DialogTitle className="text-2xl font-semibold text-center text-brand-primary"> {/* Updated styling */}
             {isSignUp ? "Join Localizini" : "Welcome Back"}
           </DialogTitle>
+          {/* Optional: Add DialogDescription here if needed */}
+          {/* <DialogDescription className="text-center text-brand-text text-sm">
+            Access your discoveries and contribute to the community.
+          </DialogDescription> */}
         </DialogHeader>
 
         <div className="space-y-6">
           <Button
             onClick={handleGoogleLogin}
             variant="outline"
-            className="w-full h-12 border-gray-200 hover:bg-gray-50"
+            className="w-full h-12 bg-white border-brand-accent-medium text-brand-text hover:bg-brand-accent-medium/20 shadow-soft-sm rounded-lg text-sm" // Updated styling
           >
-            <Chrome className="h-5 w-5 mr-3" />
+            <Chrome className="h-5 w-5 mr-3 text-brand-primary" /> {/* Icon color */}
             Continue with Google
           </Button>
 
-          <div className="relative">
-            <Separator />
-            <span className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-sm text-gray-500">
-              or
+          <div className="relative my-6"> {/* Added my-6 for more spacing */}
+            <Separator className="border-brand-accent-medium/50" /> {/* Updated line color */}
+            <span className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-brand-background px-3 text-xs font-medium text-brand-accent-dark"> {/* Updated text & bg color */}
+              OR CONTINUE WITH EMAIL
             </span>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && (
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name" className="text-brand-text text-sm font-medium">Full Name</Label> {/* Updated styling */}
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <User className="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-brand-accent-dark" /> {/* Updated color & position */}
                   <Input
                     id="name"
                     type="text"
-                    placeholder="Enter your name"
+                    placeholder="Enter your full name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="pl-10"
+                    className="pl-10 border-brand-accent-medium focus:border-brand-primary focus:ring-brand-primary bg-brand-background/80 rounded-lg text-sm" // Updated styling
                     required={isSignUp}
                   />
                 </div>
@@ -93,45 +101,45 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-brand-text text-sm font-medium">Email</Label> {/* Updated styling */}
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Mail className="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-brand-accent-dark" /> {/* Updated color & position */}
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder="you@example.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="pl-10"
+                  className="pl-10 border-brand-accent-medium focus:border-brand-primary focus:ring-brand-primary bg-brand-background/80 rounded-lg text-sm" // Updated styling
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-brand-text text-sm font-medium">Password</Label> {/* Updated styling */}
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Lock className="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-brand-accent-dark" /> {/* Updated color & position */}
                 <Input
                   id="password"
                   type="password"
                   placeholder="Enter your password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="pl-10"
+                  className="pl-10 border-brand-accent-medium focus:border-brand-primary focus:ring-brand-primary bg-brand-background/80 rounded-lg text-sm" // Updated styling
                   required
                 />
               </div>
             </div>
 
-            <Button type="submit" className="w-full h-12 bg-[#1C768F] hover:bg-[#1C768F]/90">
+            <Button type="submit" className="w-full h-11 bg-brand-primary text-primary-foreground hover:bg-brand-accent-dark rounded-lg text-sm py-2.5 shadow-soft-sm"> {/* Updated styling & size */}
               {isSignUp ? "Create Account" : "Sign In"}
             </Button>
           </form>
 
-          <div className="text-center">
-            <button onClick={() => setIsSignUp(!isSignUp)} className="text-sm text-[#1C768F] hover:underline">
-              {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
+          <div className="text-center pt-2"> {/* Added pt-2 for spacing */}
+            <button onClick={() => setIsSignUp(!isSignUp)} className="text-sm text-brand-primary hover:underline focus:outline-none">
+              {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
             </button>
           </div>
         </div>
