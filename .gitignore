@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+localizini-backend/node_modules/ # Explicitly ignore backend node_modules
 
 # next.js
 /.next/
