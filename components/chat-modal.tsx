@@ -2,66 +2,161 @@
 
 import type React from "react"
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog" // Added DialogClose
+import type React from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Send, Users, XIcon } from "lucide-react" // Added XIcon
-import { useState } from "react"
+import { Send, Users, XIcon, Loader2, WifiOff } from "lucide-react" // Added Loader2, WifiOff
+import { useState, useEffect, useRef } from "react" // Added useEffect, useRef
+import { io, Socket } from "socket.io-client";
+import { useAuth } from "@/contexts/AuthContext"; // Import useAuth
+import { Place } from "@/app/page"; // Assuming Place type is exported from app/page.tsx
+import { User } from "@/contexts/AuthContext"; // Assuming User type is exported from AuthContext
 
-interface ChatModalProps {
-  isOpen: boolean
-  onClose: () => void
-  place: any
-  user: any
+// Hardcoded SOCKET_URL for now due to .env.local issues
+const SOCKET_URL = 'http://localhost:3001'; 
+
+interface ChatMessageUser {
+  id: string;
+  name: string;
+  avatarUrl?: string;
+}
+export interface ChatMessage { // Exporting ChatMessage interface
+  id: string;
+  user: ChatMessageUser;
+  text: string; // Changed from 'message' to 'text' to align with typical backend
+  timestamp: string; // Or Date object
+  roomId: string; // To ensure message is for this room
+  // isOwn is determined on client-side
 }
 
-const mockMessages = [
-  {
-    id: "1",
-    user: { name: "Sarah M.", avatar: "/placeholder.svg?height=32&width=32" },
-    message: "Just arrived! The coffee here is amazing ☕",
-    timestamp: "2 min ago",
-    isOwn: false,
-  },
-  {
-    id: "2",
-    user: { name: "Mike R.", avatar: "/placeholder.svg?height=32&width=32" },
-    message: "Anyone know if they have WiFi?",
-    timestamp: "5 min ago",
-    isOwn: false,
-  },
-  {
-    id: "3",
-    user: { name: "Emma L.", avatar: "/placeholder.svg?height=32&width=32" },
-    message: 'Yes! Password is "coffee123"',
-    timestamp: "4 min ago",
-    isOwn: false,
-  },
-]
+interface ChatModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  place: Place; // Use Place type
+  // user prop removed, using from useAuth
+}
 
-export function ChatModal({ isOpen, onClose, place, user }: ChatModalProps) {
-  const [messages, setMessages] = useState(mockMessages)
-  const [newMessage, setNewMessage] = useState("")
+export function ChatModal({ isOpen, onClose, place }: ChatModalProps) {
+  const { user, token } = useAuth(); // Get user and token from AuthContext
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [isConnected, setIsConnected] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [isSendingMessage, setIsSendingMessage] = useState(false); // New state for send button
+  const scrollAreaRef = useRef<HTMLDivElement>(null); // For auto-scrolling
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return
+  useEffect(() => {
+    if (isOpen && place?.id && user && token) {
+      // Using hardcoded URL due to .env.local issues
+      const newSocket = io(SOCKET_URL, {
+        query: { token }, // Send token for authentication
+        transports: ['websocket'] // Prefer websocket
+      });
+      setSocket(newSocket);
+      setChatError(null); // Clear previous errors
 
-    const message = {
-      id: Date.now().toString(),
-      user: user,
-      message: newMessage,
-      timestamp: "now",
-      isOwn: true,
+      newSocket.on('connect', () => {
+        console.log('Chat socket connected:', newSocket.id);
+        setIsConnected(true);
+        setChatError(null);
+        newSocket.emit('joinRoom', { roomId: place.id });
+        // Request past messages for the room
+        newSocket.emit('requestPastMessages', { roomId: place.id }); 
+      });
+
+      newSocket.on('loadInitialMessages', (initialMessages: ChatMessage[]) => {
+        console.log('Received initial messages:', initialMessages);
+        setMessages(initialMessages.filter(msg => msg.roomId === place.id));
+      });
+      
+      newSocket.on('newMessageFromServer', (message: ChatMessage) => {
+        console.log('Received new message from server:', message);
+        if (message.roomId === place.id) {
+          setMessages((prevMessages) => [...prevMessages, message]);
+        }
+      });
+
+      newSocket.on('disconnect', (reason) => {
+        console.log('Chat socket disconnected:', reason);
+        setIsConnected(false);
+        if (reason !== 'io client disconnect') { // Don't show error if disconnected manually
+          setChatError('Disconnected from chat. Reconnecting...');
+        }
+      });
+
+      newSocket.on('connect_error', (error) => {
+        console.error('Chat socket connection error:', error);
+        setIsConnected(false);
+        setChatError(`Connection failed: ${error.message}. Please try again later.`);
+      });
+      
+      newSocket.on('chatError', (errorMessage: string) => {
+        console.error('Chat Error from server:', errorMessage);
+        setChatError(errorMessage);
+      });
+
+
+      return () => {
+        console.log('Cleaning up chat socket for place:', place.id);
+        newSocket.emit('leaveRoom', { roomId: place.id });
+        newSocket.disconnect();
+        setSocket(null);
+        setIsConnected(false);
+        setMessages([]); // Clear messages when modal closes or changes place
+      };
+    } else if (!isOpen && socket) {
+        // Ensure socket is disconnected if modal is closed but socket somehow still exists
+        socket.disconnect();
+        setSocket(null);
     }
+  }, [isOpen, place?.id, token, user]); // user dependency to re-init if user changes
 
-    setMessages([...messages, message])
-    setNewMessage("")
-  }
+  // Auto-scroll to bottom
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
+    }
+  }, [messages]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+
+  const handleSendMessage = async () => { // Made async for potential await if socket.emit had callback
+    if (!newMessage.trim() || !socket || !isConnected || !user || isSendingMessage) return;
+
+    setIsSendingMessage(true);
+    try {
+      const messagePayload = {
+        roomId: place.id,
+        text: newMessage,
+      };
+      
+      // Emit and wait for ack if backend is set up for it (example, not standard)
+      // await new Promise((resolve, reject) => {
+      //   socket.emit('sendMessageToServer', messagePayload, (ack: any) => {
+      //     if (ack?.error) reject(ack.error);
+      //     else resolve(ack);
+      //   });
+      // });
+      socket.emit('sendMessageToServer', messagePayload); // Fire and forget for now
+
+      // Optimistic update can be done here before or after emit depending on desired UX
+      // For simplicity, we'll rely on newMessageFromServer event from backend to add the message
+      setNewMessage(""); 
+    } catch (error) {
+      console.error("Error sending message:", error);
+      // Optionally set a temporary error state for sending, or use toast
+      // setChatError("Failed to send message. Please try again."); 
+      // toast.error("Failed to send message", { description: "Please try again." });
+    } finally {
+      setIsSendingMessage(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       handleSendMessage()
@@ -130,14 +225,14 @@ export function ChatModal({ isOpen, onClose, place, user }: ChatModalProps) {
             />
             <Button
               onClick={handleSendMessage}
-              disabled={!newMessage.trim()}
-              className="bg-brand-primary text-white hover:bg-brand-accent-dark rounded-lg w-10 h-10 p-0 flex items-center justify-center shadow-soft-sm" /* Updated send button style */
+              disabled={!newMessage.trim() || !isConnected || isSendingMessage}
+              className="bg-brand-primary text-white hover:bg-brand-accent-dark rounded-lg w-10 h-10 p-0 flex items-center justify-center shadow-soft-sm disabled:opacity-70" 
               aria-label="Send message"
             >
-              <Send className="h-4 w-4" />
+              {isSendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
-          <p className="text-xs text-brand-accent-dark mt-2 text-center">Be respectful and follow community guidelines</p> {/* Updated footer text color */}
+          <p className="text-xs text-brand-accent-dark mt-2 text-center">Be respectful and follow community guidelines</p> 
         </div>
       </DialogContent>
     </Dialog>
