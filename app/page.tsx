@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react" // Added useEffect, useCallback
+import apiClient from "@/lib/api"; // Import apiClient
 import { MapView } from "@/components/map-view"
 import { FilterSidebar } from "@/components/filter-sidebar"
 import { PlaceCardList } from "@/components/place-card-list"
@@ -12,9 +13,30 @@ import { UserProfile } from "@/components/user-profile"
 import { Button } from "@/components/ui/button"
 import { Filter, X, Sparkles, Zap } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useAuth } from "@/contexts/AuthContext"; // Import useAuth
+
+// Define a type for Place objects based on expected API response
+export interface Place { // Exporting Place interface
+  id: string;
+  name: string;
+  category: string;
+  rating: number;
+  distance?: number; 
+  image: string;     
+  images?: string[];  
+  description: string;
+  address?: string; 
+  hours?: string; 
+  tags?: string[]; 
+  coordinates: { lat: number; lng: number }; 
+  isOpen?: boolean; 
+  vibe?: string; 
+  funFact?: string; 
+  reviews?: any[]; 
+}
 
 // Mock data for places with more fun elements
-const mockPlaces = [
+const mockPlaces = [ // This will be replaced by 'places' state
   {
     id: "1",
     name: "Brew & Beans Coffee ☕",
@@ -111,34 +133,73 @@ const mockPlaces = [
 ]
 
 export default function HomePage() {
-  const [selectedPlace, setSelectedPlace] = useState<any>(null)
-  const [showAuth, setShowAuth] = useState(false)
-  const [showProfile, setShowProfile] = useState(false)
-  const [showChat, setShowChat] = useState(false)
-  const [showFilters, setShowFilters] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const [discoveryStreak, setDiscoveryStreak] = useState(3)
-  const [showCelebration, setShowCelebration] = useState(false)
+  const { user: authUser, isLoading: authIsLoading } = useAuth(); 
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null); // Use Place type
+  const [showAuth, setShowAuth] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  
   const [filters, setFilters] = useState({
-    category: "all",
+    category: "all", 
+    search: "",      
     openNow: false,
-    distance: 5,
-    rating: 0,
-    search: "",
+    distance: 5, 
+    rating: 0,   
     vibe: "all",
-  })
+  });
 
-  const filteredPlaces = mockPlaces.filter((place) => {
-    if (filters.category !== "all" && place.category !== filters.category) return false
-    if (filters.openNow && !place.isOpen) return false
-    if (place.distance > filters.distance) return false
-    if (place.rating < filters.rating) return false
-    if (filters.search && !place.name.toLowerCase().includes(filters.search.toLowerCase())) return false
-    if (filters.vibe !== "all" && place.vibe !== filters.vibe) return false
-    return true
-  })
+  const [places, setPlaces] = useState<Place[]>([]); // State for fetched places
+  const [isLoadingPlaces, setIsLoadingPlaces] = useState(true);
+  const [placesError, setPlacesError] = useState<string | null>(null);
 
-  const handlePlaceSelect = (place: any) => {
+  const fetchPlaces = useCallback(async (currentFilters: typeof filters) => {
+    setIsLoadingPlaces(true);
+    setPlacesError(null);
+    console.log("Attempting to fetch places with filters:", currentFilters); // Log attempt
+    try {
+      const queryParams: Record<string, any> = {};
+      if (currentFilters.category && currentFilters.category !== "all") {
+        queryParams.category = currentFilters.category;
+      }
+      if (currentFilters.search) {
+        queryParams.q = currentFilters.search; 
+      }
+      // Other filters (openNow, distance, rating, vibe) will be applied client-side for now.
+      
+      const response = await apiClient.get('/places', { params: queryParams });
+      const fetchedPlaces = response.data.places || (Array.isArray(response.data) ? response.data : []);
+      console.log("Fetched places data:", fetchedPlaces); // Log fetched data
+      setPlaces(fetchedPlaces); 
+    } catch (error: any) {
+      console.error("Failed to fetch places:", error);
+      setPlacesError(error.response?.data?.message || error.message || "Failed to load places.");
+      setPlaces([]); 
+    } finally {
+      setIsLoadingPlaces(false);
+    }
+  }, []); // Empty dependency array for useCallback if it doesn't depend on props/state from HomePage scope
+
+  // Effect for initial fetch and when backend-supported filters change
+  useEffect(() => {
+    console.log("Filters changed, preparing to fetch:", filters);
+    const handler = setTimeout(() => {
+      fetchPlaces(filters);
+    }, 300); // Debounce
+    return () => clearTimeout(handler);
+  }, [filters.category, filters.search, fetchPlaces]); // fetchPlaces is a dependency
+
+  // Apply frontend filters AFTER fetching
+  const filteredPlaces = places.filter((place) => {
+    if (filters.openNow && !place.isOpen) return false;
+    if (place.distance !== undefined && place.distance > filters.distance) return false; 
+    if (place.rating < filters.rating) return false;
+    if (filters.vibe !== "all" && place.vibe && place.vibe !== filters.vibe) return false;
+    return true;
+  });
+
+  const handlePlaceSelect = (place: Place) => { // Use Place type
     setSelectedPlace(place)
     // Trigger celebration for discovering new places
     if (Math.random() > 0.7) {
@@ -147,32 +208,39 @@ export default function HomePage() {
     }
   }
 
-  const handleJoinChat = () => {
-    if (!user) {
-      setShowAuth(true)
-      return
+  const handleJoinChat = () => { // This specific handleJoinChat in page.tsx might be overridden by PlaceDetailModal's new logic
+    if (!authUser) { // Use authUser from context
+      setShowAuth(true);
+      return;
     }
-    setShowChat(true)
-  }
+    setShowChat(true);
+  };
 
-  const handleLogin = (userData: any) => {
-    setUser(userData)
-    setShowAuth(false)
-    setDiscoveryStreak(discoveryStreak + 1)
-  }
+  // const handleLogin = (userData: any) => { // Removed, AuthModal now uses context's login
+  //   setUser(userData);
+  //   setShowAuth(false);
+  //   setDiscoveryStreak(discoveryStreak + 1);
+  // };
+
+  // Open AuthModal function to be passed around
+  const openAuthModal = () => setShowAuth(true);
 
   if (showProfile) {
+    // UserProfile will get user from useAuth directly
+    // Navigation will also get user from useAuth directly
     return (
       <div className="min-h-screen bg-brand-background">
         <Navigation
-          user={user}
-          onAuthClick={() => setShowAuth(true)}
+          onAuthClick={openAuthModal}
           onProfileClick={() => setShowProfile(false)}
-          discoveryStreak={discoveryStreak}
+          // user and discoveryStreak props removed
         />
-        <UserProfile user={user} onBack={() => setShowProfile(false)} discoveryStreak={discoveryStreak} />
+        <UserProfile 
+          onBack={() => setShowProfile(false)} 
+          // user and discoveryStreak props removed
+        />
       </div>
-    )
+    );
   }
 
   return (
@@ -180,10 +248,9 @@ export default function HomePage() {
       {/* Floating background elements removed */}
 
       <Navigation
-        user={user}
-        onAuthClick={() => setShowAuth(true)}
+        onAuthClick={openAuthModal}
         onProfileClick={() => setShowProfile(true)}
-        discoveryStreak={discoveryStreak}
+        // user and discoveryStreak props removed
       />
 
       <div className="flex h-[calc(100vh-64px)] relative">
@@ -244,16 +311,17 @@ export default function HomePage() {
               </Button>
             </motion.div>
 
-            {/* Discovery Streak */}
-            {discoveryStreak > 0 && (
+            {/* Discovery Streak - Now handled by Navigation component internally using authUser */}
+            {/* This specific instance of discovery streak display might be removed or kept if it's different from nav's */}
+            {authUser && (authUser.discoveryStreak || 0) > 0 && (
               <motion.div
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
-                className="absolute top-4 right-4 bg-gradient-to-r from-brand-primary to-brand-accent-dark text-white px-4 py-2 rounded-full shadow-soft-lg"
+                className="absolute top-4 right-4 bg-gradient-to-r from-brand-primary to-brand-accent-dark text-white px-4 py-2 rounded-full shadow-soft-lg hidden md:flex" // Hidden on small screens if nav shows it
               >
                 <div className="flex items-center space-x-2">
                   <Zap className="h-4 w-4" />
-                  <span className="font-bold">{discoveryStreak} day streak! ✨</span>
+                  <span className="font-bold">{authUser.discoveryStreak} day streak! ✨</span>
                 </div>
               </motion.div>
             )}
@@ -261,7 +329,13 @@ export default function HomePage() {
 
           {/* Place Cards - Desktop */}
           <div className="hidden lg:block w-96 border-l border-brand-accent-medium">
-            <PlaceCardList places={filteredPlaces} onPlaceSelect={handlePlaceSelect} selectedPlace={selectedPlace} />
+            <PlaceCardList 
+              places={filteredPlaces} 
+              onPlaceSelect={handlePlaceSelect} 
+              selectedPlace={selectedPlace}
+              isLoading={isLoadingPlaces}
+              error={placesError}
+            />
           </div>
         </div>
 
@@ -305,15 +379,22 @@ export default function HomePage() {
           place={selectedPlace}
           isOpen={!!selectedPlace}
           onClose={() => setSelectedPlace(null)}
-          onJoinChat={handleJoinChat}
-          user={user}
+          onJoinChat={() => { // Simplified: directly open chat modal if selectedPlace is set
+            if (!authUser) {
+              openAuthModal(); // If somehow user got logged out, prompt again
+            } else {
+              setShowChat(true);
+            }
+          }}
+          onAuthRequired={openAuthModal} // Pass function to open AuthModal
+          // user prop removed
         />
       )}
 
-      {showAuth && <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} onLogin={handleLogin} />}
+      {showAuth && <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />} {/* onLogin prop removed */}
 
-      {showChat && selectedPlace && (
-        <ChatModal isOpen={showChat} onClose={() => setShowChat(false)} place={selectedPlace} user={user} />
+      {showChat && selectedPlace && authUser && ( // Ensure authUser exists for ChatModal
+        <ChatModal isOpen={showChat} onClose={() => setShowChat(false)} place={selectedPlace} user={authUser} />
       )}
     </div>
   )

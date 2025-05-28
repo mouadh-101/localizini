@@ -8,44 +8,87 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { useState } from "react"
-import { Mail, Lock, User, Chrome, XIcon } from "lucide-react" // Added XIcon
+import { Mail, Lock, User, Chrome, XIcon, Loader2 } from "lucide-react" // Added XIcon and Loader2
+import { useAuth, User as AuthUser } from "@/contexts/AuthContext"; // Import useAuth and User type
+import apiClient from "@/lib/api"; // Import apiClient
 
 interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
-  onLogin: (user: any) => void
+  // onLogin prop is removed as we'll use the context's login
 }
 
-export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
-  const [isSignUp, setIsSignUp] = useState(false)
+export function AuthModal({ isOpen, onClose }: AuthModalProps) {
+  const auth = useAuth();
+  const [isSignUp, setIsSignUp] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
-  })
+  });
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Mock authentication
-    const user = {
-      id: "1",
-      name: formData.name || "John Doe",
-      email: formData.email,
-      avatar: "/placeholder.svg?height=32&width=32",
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setApiError(null);
+
+    try {
+      let response;
+      if (isSignUp) {
+        response = await apiClient.post('/auth/signup', { 
+          name: formData.name, 
+          email: formData.email, 
+          password: formData.password 
+        });
+      } else {
+        response = await apiClient.post('/auth/login', { 
+          email: formData.email, 
+          password: formData.password 
+        });
+      }
+      
+      // Assuming API returns { accessToken: string, user: User }
+      // Adjust if your API returns user details under a different key, e.g. response.data directly
+      const userData = response.data.user || response.data; // Adapt as needed
+      auth.login(response.data.accessToken, userData as AuthUser); 
+
+      setFormData({ name: "", email: "", password: "" }); // Reset form
+      onClose(); // Close modal on success
+    } catch (error: any) {
+      if (error.response && error.response.data && error.response.data.message) {
+        setApiError(error.response.data.message);
+      } else if (error.message) {
+        setApiError(error.message);
+      } else {
+        setApiError("An unexpected error occurred. Please try again.");
+      }
+      console.error("Auth error:", error);
+    } finally {
+      setIsSubmitting(false);
     }
-    onLogin(user)
-  }
+  };
 
   const handleGoogleLogin = () => {
-    // Mock Google authentication
-    const user = {
-      id: "1",
-      name: "John Doe",
-      email: "john@example.com",
-      avatar: "/placeholder.svg?height=32&width=32",
-    }
-    onLogin(user)
-  }
+    // Mock Google authentication - will be replaced in a future step
+    // For now, let's simulate a successful login for testing UI flow
+    const mockUser: AuthUser = {
+      id: "google-mock-1",
+      name: "Google User",
+      email: "google@example.com",
+      // avatarUrl: "/placeholder-user.jpg" // Example avatar
+    };
+    auth.login("mock-google-token", mockUser);
+    onClose();
+  };
+
+  // Reset error when switching between sign-in/sign-up
+  const toggleAuthMode = () => {
+    setIsSignUp(!isSignUp);
+    setApiError(null);
+    setFormData({ name: "", email: "", password: "" }); // Reset form on mode toggle
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -59,7 +102,7 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
             {isSignUp ? "Join Localizini" : "Welcome Back"}
           </DialogTitle>
           {/* Optional: Add DialogDescription here if needed */}
-          {/* <DialogDescription className="text-center text-brand-text text-sm">
+          {/* <DialogDescription className="text-center text-brand-text text-sm mt-1">
             Access your discoveries and contribute to the community.
           </DialogDescription> */}
         </DialogHeader>
@@ -132,13 +175,24 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
               </div>
             </div>
 
-            <Button type="submit" className="w-full h-11 bg-brand-primary text-primary-foreground hover:bg-brand-accent-dark rounded-lg text-sm py-2.5 shadow-soft-sm"> {/* Updated styling & size */}
-              {isSignUp ? "Create Account" : "Sign In"}
+            <Button 
+              type="submit" 
+              className="w-full h-11 bg-brand-primary text-primary-foreground hover:bg-brand-accent-dark rounded-lg text-sm py-2.5 shadow-soft-sm disabled:opacity-70 flex items-center justify-center" // Added flex items-center justify-center
+              disabled={isSubmitting}
+            >
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting ? (isSignUp ? "Creating Account..." : "Signing In...") : (isSignUp ? "Create Account" : "Sign In")}
             </Button>
           </form>
+          
+          {apiError && (
+            <p className="text-center text-sm text-red-600 bg-red-100 border border-red-400 p-2.5 rounded-lg">
+              {apiError}
+            </p>
+          )}
 
           <div className="text-center pt-2"> {/* Added pt-2 for spacing */}
-            <button onClick={() => setIsSignUp(!isSignUp)} className="text-sm text-brand-primary hover:underline focus:outline-none">
+            <button onClick={toggleAuthMode} className="text-sm text-brand-primary hover:underline focus:outline-none">
               {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
             </button>
           </div>
